@@ -36,28 +36,49 @@ class Receta:
         print(self.Procedimiento)
 
 class PedidoSimple:
-    def __init__(self, Cliente, Direccion, RecetasUtilizar, CantidadPlatillos, Fecha):
-        self.Cliente = Cliente
+    def __init__(self, cliente, Direccion, RecetasUtilizar, CantidadPlatillos, Fecha, Anticipo):
+        self.cliente = cliente
         self.Direccion = Direccion
         self.RecetasUtilizar = RecetasUtilizar
         self.CantidadPlatillos = CantidadPlatillos
         self.Fecha = Fecha
+        self.Anticipo = Anticipo
         self.SubTotal = 0
         self.Total = 0
-    
     def MostrarPedido(self):
-        print
-
+        print("-----------------------------")
+        print(f"Cliente: {self.cliente}")
+        print(f"Direccion: {self.Direccion}")
+        print(f"Fecha: {self.Fecha}")
+        print("\nRecetas:")
+        for r in self.RecetasUtilizar:
+            print(f"{r.Nombre_Platillo}")
+        print(f"\nSubtotal: {self.SubTotal}")
+        print(f"Total: {self.Total}")
+        print(f"Anticipo: {self.Anticipo}")
     def PedidoEntregado(self):
-        return {"Cliente": self.Cliente, 
-                "Fecha": self.Fecha, 
-                "Receta Utilizada" : self.RecetasUtilizar}
+        return {"Cliente": self.cliente,
+                "Total" : self.Total,
+                "Fecha": self.Fecha,
+                "Direccion" : self.Direccion,
+                "Cantidad de platillos" : self.CantidadPlatillos,
+                "Recetas Utilizadas" : [Rec.Nombre_Platillo for Rec in self.RecetasUtilizar]}
 
 class Evento(PedidoSimple):
-    def __init__(self, Cliente, Direccion, RecetasUtilizar, CantidadPlatillos, Fecha, NombreEvento):
-        super().__init__(Cliente, Direccion, RecetasUtilizar, CantidadPlatillos, Fecha)
+    def __init__(self, cliente, Direccion, RecetasUtilizar, CantidadPlatillos, Fecha, Anticipo, NombreEvento, Extras = None):
+        super().__init__(cliente, Direccion, RecetasUtilizar, CantidadPlatillos, Fecha, Anticipo)
         self.NombreEvento = NombreEvento
-
+        self.Extras = Extras 
+    def MostrarPedido(self):
+        print(f"---------Nombre del Evento: {self.NombreEvento}---------")
+        super().MostrarPedido()
+        print(f"Extras: {self.Extras}")
+    def PedidoEntregado(self):
+        EventoEntregado = {"Evento" : self.NombreEvento}
+        NuevoEntregado = self.PedidoEntregado()
+        for i, j in NuevoEntregado.items():
+            EventoEntregado[i] = j
+        return EventoEntregado
 
 #Funciones
 
