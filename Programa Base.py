@@ -1,14 +1,16 @@
 #clases
 class Cliente:
-    def __init__(self, Nombre, Direccion, Descuento = 0):
+    def __init__(self, Nombre, Direccion, NumeroTelefono, Descuento = 0):
         self.Nombre = Nombre
         self.Direccion = Direccion
         self.Descuento = Descuento
+        self.Telefono = NumeroTelefono
         self.PedidosAnteriores = []
         self.PedidosPendientes = []
     def VerCliente(self):
         print(f"------{self.Nombre}------")
         print(f"Direccion: {self.Direccion}")
+        print(f"Telefono: {self.Telefono}")
         
         if len(self.PedidosAnteriores) != 0:
             print("\nPedidos Anteriores:")
@@ -132,6 +134,7 @@ ListaMonetaria = []
 def AgregarCliente():
     Name = TryCatchString("Ingrese el nombre del cliente: ", None)
     Direction = TryCatchString("Ingrese la dirección del cliente: ", None)
+    Telefono = TryCatchInt([Cell for Cell in range(10000000, 100000000, 1)],"Ingrese el numero de telefono")
     Descp = TryCatchInt([1,2], "Tiene un descuento especifico? (1 = si, 2 = no)")
 
     if Descp == 2:
@@ -140,8 +143,8 @@ def AgregarCliente():
         Descuento = TryCatchInt([i for i in range(1, 100)], "Ingrese el descuento del cliente")
         Descuento = Descuento /100
 
-    NewCliente = Cliente(Name, Direction, Descuento)
-    ListaClientes.append(NewCliente)
+    NewCliente = Cliente(Name, Direction, Telefono, Descuento)
+    return NewCliente
 
 def AgregarReceta():
     Ingredientes = []
