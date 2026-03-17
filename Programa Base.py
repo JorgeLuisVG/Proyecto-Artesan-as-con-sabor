@@ -221,7 +221,6 @@ def AgregarPedido():
                     Descuento = TryCatchInt([i for i in range(1, 100)], "Ingrese el descuento del cliente")
                     Descuento = Descuento/100
                 NewCliente = Cliente(Name, Direction, Telefono, Descuento)
-
             return NewCliente
             
     def AgregarPedidoSimple():
@@ -235,6 +234,8 @@ def AgregarPedido():
             Direction = Clie.Direccion
         elif DEP == 3:
             Direction = TryCatchString("Ingrese la direccion donde se entregará el pedido")
+
+        VerBitacora(ListaRecetas)
         
 
 
