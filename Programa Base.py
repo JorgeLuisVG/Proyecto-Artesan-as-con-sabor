@@ -28,13 +28,15 @@ class Cliente:
                 print(i)
 
 class Receta:
-    def __init__(self, Nombre_Platillo, Ingredientes, Procedimiento, PrecioPorcion):
+    def __init__(self, Nombre_Platillo, Ingredientes, Procedimiento, PrecioPorcion, precioManufactura):
         self.Nombre_Platillo = Nombre_Platillo
         self.Ingredientes = Ingredientes
         self.Procedimiento = Procedimiento
         self.Precio = PrecioPorcion
+        self.PrecioManufactura = precioManufactura
     def MostrarReceta(self):
         print(f"-----{self.Nombre_Platillo}-----")
+        print(f"Precio de fabricacion: {self.PrecioManufactura}")
         print(f"Precio: {self.Precio}")
         print("Ingredientes:")
         for i in self.Ingredientes:
@@ -199,9 +201,11 @@ def AgregarReceta():
     
     Preparacion = TryCatchString("Escriba la preparacion de la receta: ")
 
+    precioManufacturar = TryCatchString("Ingrese el precio de manufactura")
+
     Precio = TryCatchString("Ingrese el precio del platillo")
 
-    NuevaReceta = Receta(Nombre, Ingredientes, Preparacion, Precio)
+    NuevaReceta = Receta(Nombre, Ingredientes, Preparacion, Precio, precioManufacturar)
     ListaRecetas.append(NuevaReceta)
 
 def AgregarPedido():
