@@ -19,6 +19,7 @@ from models import (
     obtenerClientes,
     obtenerEventos,
     obtenerHistorial,
+    obtenerPedidoDetalle,
     obtenerIngredientesReceta,
     obtenerPedidos,
     obtenerPedidosCalendario,
@@ -220,7 +221,8 @@ class App(ctk.CTk):
                 f"{resumen['clientes']} clientes   "
                 f"{resumen['recetas']} recetas   "
                 f"{resumen['pendientes']} pendientes   "
-                f"Q {float(resumen['ingresos']):,.2f} entregado"
+                f"Q {float(resumen['ingresos']):,.2f} ingresos   "
+                f"Q {float(resumen.get('ganancia', 0)):,.2f} ganancia"
             )
             self.resumen_label.configure(text=texto)
         except Exception:
@@ -381,7 +383,9 @@ class App(ctk.CTk):
             [
                 ("id", "ID", 50, "center"),
                 ("nombre", "Receta", 180, "w"),
-                ("ingredientes", "Ingredientes", 360, "w"),
+                ("ingredientes", "Ingredientes", 300, "w"),
+                ("manufactura", "Manufactura", 110, "e"),
+                ("ganancia", "Ganancia", 100, "e"),
                 ("precio", "Precio", 90, "e"),
             ],
         )
@@ -410,6 +414,8 @@ class App(ctk.CTk):
                         receta["id"],
                         receta["nombrePlatillo"],
                         receta["ingredientes"] or "Sin ingredientes registrados",
+                        self._money(receta["precioManufactura"]),
+                        self._money(float(receta["precio"]) - float(receta["precioManufactura"])),
                         self._money(receta["precio"]),
                     ),
                 )
@@ -426,7 +432,7 @@ class App(ctk.CTk):
                 texto_ingredientes = "\n".join(f"- {i['nombre']}: {i['cantidad']}" for i in ingredientes) or "Sin ingredientes registrados"
                 detalle.insert(
                     "1.0",
-                    f"{receta['nombrePlatillo']}\nPrecio: {self._money(receta['precio'])}\n\nIngredientes:\n{texto_ingredientes}\n\nPreparacion:\n{receta['procedimiento'] or 'Sin preparacion registrada'}",
+                    f"{receta['nombrePlatillo']}\nPrecio de venta: {self._money(receta['precio'])}\nPrecio de manufactura: {self._money(receta['precioManufactura'])}\nGanancia por porcion: {self._money(float(receta['precio']) - float(receta['precioManufactura']))}\n\nIngredientes:\n{texto_ingredientes}\n\nPreparacion:\n{receta['procedimiento'] or 'Sin preparacion registrada'}",
                 )
             detalle.configure(state="disabled")
 
@@ -450,6 +456,7 @@ class App(ctk.CTk):
 
         nombre_var = tk.StringVar(value=receta["nombrePlatillo"] if receta else "")
         precio_var = tk.StringVar(value=str(receta["precio"]) if receta else "")
+        precio_manufactura_var = tk.StringVar(value=str(receta["precioManufactura"]) if receta else "")
 
         ctk.CTkLabel(form, text="Nombre del platillo", anchor="w", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=0, column=0, sticky="w", pady=8)
         ctk.CTkEntry(form, textvariable=nombre_var, height=40).grid(row=0, column=1, sticky="ew", pady=8)
@@ -457,14 +464,17 @@ class App(ctk.CTk):
         ctk.CTkLabel(form, text="Precio por porcion", anchor="w", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=1, column=0, sticky="w", pady=8)
         ctk.CTkEntry(form, textvariable=precio_var, height=40, placeholder_text="0.00").grid(row=1, column=1, sticky="ew", pady=8)
 
-        ctk.CTkLabel(form, text="Ingredientes", anchor="w", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=2, column=0, sticky="nw", pady=8)
+        ctk.CTkLabel(form, text="Precio de manufactura", anchor="w", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=2, column=0, sticky="w", pady=8)
+        ctk.CTkEntry(form, textvariable=precio_manufactura_var, height=40, placeholder_text="0.00").grid(row=2, column=1, sticky="ew", pady=8)
+
+        ctk.CTkLabel(form, text="Ingredientes", anchor="w", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=3, column=0, sticky="nw", pady=8)
         ingredientes_text = ctk.CTkTextbox(form, height=150, corner_radius=12)
-        ingredientes_text.grid(row=2, column=1, sticky="ew", pady=8)
+        ingredientes_text.grid(row=3, column=1, sticky="ew", pady=8)
         ingredientes_text.insert("1.0", "\n".join(f"{i['nombre']} | {i['cantidad']}" for i in ingredientes))
 
-        ctk.CTkLabel(form, text="Preparacion", anchor="w", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=3, column=0, sticky="nw", pady=8)
+        ctk.CTkLabel(form, text="Preparacion", anchor="w", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=4, column=0, sticky="nw", pady=8)
         procedimiento_text = ctk.CTkTextbox(form, height=160, corner_radius=12)
-        procedimiento_text.grid(row=3, column=1, sticky="ew", pady=8)
+        procedimiento_text.grid(row=4, column=1, sticky="ew", pady=8)
         procedimiento_text.insert("1.0", receta["procedimiento"] if receta else "")
 
         ayuda = ctk.CTkLabel(
@@ -473,10 +483,10 @@ class App(ctk.CTk):
             text_color=self.colors["muted"],
             anchor="w",
         )
-        ayuda.grid(row=4, column=1, sticky="w", pady=(0, 12))
+        ayuda.grid(row=5, column=1, sticky="w", pady=(0, 12))
 
         acciones = ctk.CTkFrame(form, fg_color="transparent")
-        acciones.grid(row=5, column=0, columnspan=2, sticky="e", pady=(8, 0))
+        acciones.grid(row=6, column=0, columnspan=2, sticky="e", pady=(8, 0))
 
         def guardar():
             nombre = nombre_var.get().strip()
@@ -485,15 +495,16 @@ class App(ctk.CTk):
                 return
             try:
                 precio = float(precio_var.get().replace(",", ".") or 0)
+                precio_manufactura = float(precio_manufactura_var.get().replace(",", ".") or 0)
             except ValueError:
-                messagebox.showerror("Precio invalido", "El precio debe ser numerico.")
+                messagebox.showerror("Precio invalido", "Los precios deben ser numericos.")
                 return
             procedimiento = procedimiento_text.get("1.0", "end").strip()
             ingredientes_guardar = self._parse_ingredientes(ingredientes_text.get("1.0", "end"))
             if receta_id:
-                actualizarReceta(receta_id, nombre, procedimiento, precio, ingredientes_guardar)
+                actualizarReceta(receta_id, nombre, procedimiento, precio, precio_manufactura, ingredientes_guardar)
             else:
-                insertarReceta(nombre, procedimiento, precio, ingredientes_guardar)
+                insertarReceta(nombre, procedimiento, precio, precio_manufactura, ingredientes_guardar)
             modal.destroy()
             self.refrescar_vista()
 
@@ -655,39 +666,78 @@ class App(ctk.CTk):
 
         search_var, search = self._toolbar(wrapper, "Buscar por cliente, evento, tipo o fecha...", acciones)
 
-        tree = self._crear_tabla(
-            wrapper,
-            [
-                ("id", "ID", 50, "center"),
-                ("fecha", "Fecha", 110, "center"),
-                ("cliente", "Cliente", 170, "w"),
-                ("tipo", "Tipo", 110, "center"),
-                ("estado", "Estado", 120, "center"),
-                ("recetas", "Recetas", 320, "w"),
-                ("total", "Total", 100, "e"),
-            ],
-        )
+        resumen_historial = {}
+        if historial:
+            resumen_frame = ctk.CTkFrame(wrapper, fg_color="transparent")
+            resumen_frame.pack(fill="x", pady=(0, 12))
+            for idx, (clave_resumen, titulo_resumen, color) in enumerate(
+                [
+                    ("ingresos", "Ingresos", self.colors["primary"]),
+                    ("manufactura", "Manufactura", self.colors["warning"]),
+                    ("ganancia", "Ganancia", self.colors["success"]),
+                    ("anticipos", "Anticipos", self.colors["accent"]),
+                ]
+            ):
+                card = ctk.CTkFrame(resumen_frame, fg_color="#ffffff", corner_radius=14)
+                card.grid(row=0, column=idx, sticky="ew", padx=(0 if idx == 0 else 8, 0))
+                resumen_frame.grid_columnconfigure(idx, weight=1)
+                ctk.CTkLabel(card, text=titulo_resumen, anchor="w", text_color=self.colors["muted"], font=ctk.CTkFont("Segoe UI", 11, "bold")).pack(fill="x", padx=14, pady=(10, 0))
+                label = ctk.CTkLabel(card, text="Q 0.00", anchor="w", text_color=color, font=ctk.CTkFont("Segoe UI", 18, "bold"))
+                label.pack(fill="x", padx=14, pady=(0, 10))
+                resumen_historial[clave_resumen] = label
+
+        columnas = [
+            ("id", "ID", 50, "center"),
+            ("fecha", "Fecha", 110, "center"),
+            ("cliente", "Cliente", 170, "w"),
+            ("tipo", "Tipo", 110, "center"),
+            ("estado", "Estado", 120, "center"),
+            ("recetas", "Recetas", 260 if historial else 320, "w"),
+            ("total", "Ingresos", 100, "e"),
+        ]
+        if historial:
+            columnas.extend(
+                [
+                    ("manufactura", "Manufactura", 120, "e"),
+                    ("ganancia", "Ganancia", 110, "e"),
+                ]
+            )
+
+        tree = self._crear_tabla(wrapper, columnas)
 
         def cargar(_event=None):
             tree.delete(*tree.get_children())
             consulta = obtenerHistorial(search_var.get()) if historial else obtenerPedidos(search_var.get(), tipo=tipo)
             if clave == "eventos":
                 consulta = obtenerEventos(search_var.get())
+            if historial:
+                ingresos = sum(float(pedido["total"] or 0) for pedido in consulta if pedido["estado"] == "Entregado")
+                manufactura = sum(float(pedido["costoManufactura"] or 0) for pedido in consulta if pedido["estado"] == "Entregado")
+                ganancia = sum(float(pedido["ganancia"] or 0) for pedido in consulta if pedido["estado"] == "Entregado")
+                anticipos = sum(float(pedido["anticipo"] or 0) for pedido in consulta)
+                resumen_historial["ingresos"].configure(text=self._money(ingresos))
+                resumen_historial["manufactura"].configure(text=self._money(manufactura))
+                resumen_historial["ganancia"].configure(text=self._money(ganancia))
+                resumen_historial["anticipos"].configure(text=self._money(anticipos))
             for pedido in consulta:
                 nombre = pedido["evento"] if pedido["tipo"] == "Evento" and pedido["evento"] else pedido["cliente"]
-                tree.insert(
-                    "",
-                    "end",
-                    values=(
-                        pedido["id"],
-                        pedido["fecha"],
-                        nombre,
-                        pedido["tipo"],
-                        pedido["estado"],
-                        pedido["recetas"] or "Sin recetas",
-                        self._money(pedido["total"]),
-                    ),
-                )
+                valores = [
+                    pedido["id"],
+                    pedido["fecha"],
+                    nombre,
+                    pedido["tipo"],
+                    pedido["estado"],
+                    pedido["recetas"] or "Sin recetas",
+                    self._money(pedido["total"]),
+                ]
+                if historial:
+                    valores.extend(
+                        [
+                            self._money(pedido["costoManufactura"]),
+                            self._money(pedido["ganancia"]),
+                        ]
+                    )
+                tree.insert("", "end", values=valores)
 
         search.bind("<KeyRelease>", cargar)
         tree.bind("<Double-1>", lambda _event: self.ver_detalle_pedido(tree))
@@ -776,7 +826,7 @@ class App(ctk.CTk):
             cantidad_var = tk.StringVar(value="1")
             ctk.CTkCheckBox(
                 row,
-                text=f"{receta['nombrePlatillo']}  ·  {self._money(receta['precio'])}",
+                text=f"{receta['nombrePlatillo']}  ·  Venta {self._money(receta['precio'])} / Costo {self._money(receta['precioManufactura'])}",
                 variable=activo,
                 text_color=self.colors["text"],
                 font=ctk.CTkFont("Segoe UI", 12),
@@ -857,8 +907,10 @@ class App(ctk.CTk):
         pedido_id = self._selected_id(tree, "pedido")
         if pedido_id is None:
             return
-        pedidos = obtenerPedidos()
-        pedido = next((p for p in pedidos if p["id"] == pedido_id), None)
+        self.ver_detalle_pedido_id(pedido_id)
+
+    def ver_detalle_pedido_id(self, pedido_id):
+        pedido, recetas_detalle = obtenerPedidoDetalle(pedido_id)
         if not pedido:
             return
 
@@ -877,6 +929,8 @@ class App(ctk.CTk):
             ("Recetas", pedido["recetas"] or "Sin recetas"),
             ("Subtotal", self._money(pedido["subtotal"])),
             ("Anticipo", self._money(pedido["anticipo"])),
+            ("Manufactura", self._money(pedido["costoManufactura"])),
+            ("Ganancia", self._money(pedido["ganancia"])),
             ("Total", self._money(pedido["total"])),
         ]
         if pedido["extras"]:
@@ -889,6 +943,19 @@ class App(ctk.CTk):
             fila.pack(fill="x", pady=5)
             ctk.CTkLabel(fila, text=etiqueta, width=120, anchor="w", text_color=self.colors["muted"], font=ctk.CTkFont("Segoe UI", 12, "bold")).pack(side="left", padx=12, pady=10)
             ctk.CTkLabel(fila, text=str(valor), anchor="w", justify="left", wraplength=390, text_color=self.colors["text"]).pack(side="left", fill="x", expand=True, padx=12, pady=10)
+
+        if recetas_detalle:
+            ctk.CTkLabel(panel, text="Detalle de manufactura", anchor="w", font=ctk.CTkFont("Segoe UI", 15, "bold"), text_color=self.colors["text"]).pack(fill="x", pady=(14, 4))
+        for receta in recetas_detalle:
+            fila = ctk.CTkFrame(panel, fg_color="#f8fafc", corner_radius=12)
+            fila.pack(fill="x", pady=4)
+            texto = (
+                f"{receta['nombrePlatillo']} x{receta['cantidad']}\n"
+                f"Venta: {self._money(receta['subtotalLinea'])}   "
+                f"Manufactura: {self._money(receta['costoLinea'])}   "
+                f"Ganancia: {self._money(receta['gananciaLinea'])}"
+            )
+            ctk.CTkLabel(fila, text=texto, anchor="w", justify="left", text_color=self.colors["text"]).pack(fill="x", padx=12, pady=10)
 
     def mostrar_calendario(self):
         self.cambiar_vista("calendario", "Calendario", "Agenda mensual interactiva de pedidos y eventos.")
@@ -972,11 +1039,12 @@ class App(ctk.CTk):
                 cell = ctk.CTkFrame(calendario_frame, fg_color=color, corner_radius=14, border_width=1, border_color=borde)
                 cell.grid(row=row_idx, column=col_idx, sticky="nsew", padx=5, pady=5)
                 cell.grid_columnconfigure(0, weight=1)
-                cell.bind("<Button-1>", lambda _event, f=fecha: self.seleccionar_fecha(f))
+                abrir_detalle = bool(pedidos)
+                cell.bind("<Button-1>", lambda _event, f=fecha, abrir=abrir_detalle: self.seleccionar_fecha(f, abrir))
 
                 dia_label = ctk.CTkLabel(cell, text=str(dia), anchor="w", font=ctk.CTkFont("Segoe UI", 14, "bold"), text_color=self.colors["text"])
                 dia_label.grid(row=0, column=0, sticky="w", padx=10, pady=(8, 2))
-                dia_label.bind("<Button-1>", lambda _event, f=fecha: self.seleccionar_fecha(f))
+                dia_label.bind("<Button-1>", lambda _event, f=fecha, abrir=abrir_detalle: self.seleccionar_fecha(f, abrir))
 
                 if pedidos:
                     cuenta = ctk.CTkLabel(
@@ -987,17 +1055,56 @@ class App(ctk.CTk):
                         font=ctk.CTkFont("Segoe UI", 11, "bold"),
                     )
                     cuenta.grid(row=1, column=0, sticky="w", padx=10)
-                    cuenta.bind("<Button-1>", lambda _event, f=fecha: self.seleccionar_fecha(f))
+                    cuenta.bind("<Button-1>", lambda _event, f=fecha: self.seleccionar_fecha(f, True))
                     primero = pedidos[0]["evento"] or pedidos[0]["cliente"]
                     resumen = ctk.CTkLabel(cell, text=primero[:24], anchor="w", text_color=self.colors["muted"], font=ctk.CTkFont("Segoe UI", 10))
                     resumen.grid(row=2, column=0, sticky="w", padx=10, pady=(0, 8))
-                    resumen.bind("<Button-1>", lambda _event, f=fecha: self.seleccionar_fecha(f))
+                    resumen.bind("<Button-1>", lambda _event, f=fecha: self.seleccionar_fecha(f, True))
 
         self._dibujar_detalle_dia(detalle_frame)
 
-    def seleccionar_fecha(self, fecha):
+    def seleccionar_fecha(self, fecha, abrir_detalle=False):
         self.selected_calendar_date = fecha
         self.mostrar_calendario()
+        if abrir_detalle:
+            self.abrir_detalle_fecha(fecha)
+
+    def abrir_detalle_fecha(self, fecha):
+        pedidos = obtenerPedidosPorFecha(fecha.isoformat())
+        if not pedidos:
+            return
+
+        modal = self._crear_modal(f"Agenda {fecha.strftime('%d/%m/%Y')}", 660, 540)
+        panel = ctk.CTkScrollableFrame(modal, fg_color="transparent")
+        panel.grid(row=0, column=0, sticky="nsew", padx=22, pady=22)
+
+        ctk.CTkLabel(
+            panel,
+            text=f"Pedidos y eventos del {fecha.strftime('%d/%m/%Y')}",
+            anchor="w",
+            text_color=self.colors["text"],
+            font=ctk.CTkFont("Segoe UI", 20, "bold"),
+        ).pack(fill="x", pady=(0, 6))
+        ctk.CTkLabel(
+            panel,
+            text=f"{len(pedidos)} registro(s) programado(s)",
+            anchor="w",
+            text_color=self.colors["muted"],
+        ).pack(fill="x", pady=(0, 14))
+
+        for pedido in pedidos:
+            card = ctk.CTkFrame(panel, fg_color="#ffffff", corner_radius=14)
+            card.pack(fill="x", pady=6)
+            nombre = pedido["evento"] if pedido["evento"] else pedido["cliente"]
+            ctk.CTkLabel(card, text=nombre, anchor="w", text_color=self.colors["text"], font=ctk.CTkFont("Segoe UI", 14, "bold")).pack(fill="x", padx=14, pady=(12, 2))
+            ctk.CTkLabel(card, text=pedido["recetas"] or "Sin recetas", anchor="w", justify="left", wraplength=560, text_color=self.colors["muted"]).pack(fill="x", padx=14)
+
+            datos = ctk.CTkFrame(card, fg_color="transparent")
+            datos.pack(fill="x", padx=14, pady=(8, 12))
+            ctk.CTkLabel(datos, text=pedido["estado"], text_color=self._estado_color(pedido["estado"]), font=ctk.CTkFont("Segoe UI", 11, "bold")).pack(side="left")
+            ctk.CTkLabel(datos, text=f"Total {self._money(pedido['total'])}", text_color=self.colors["text"], font=ctk.CTkFont("Segoe UI", 11, "bold")).pack(side="left", padx=12)
+            ctk.CTkLabel(datos, text=f"Ganancia {self._money(pedido['ganancia'])}", text_color=self.colors["success"], font=ctk.CTkFont("Segoe UI", 11, "bold")).pack(side="left")
+            ctk.CTkButton(datos, text="Ver detalle", width=100, height=30, command=lambda pid=pedido["id"]: self.ver_detalle_pedido_id(pid)).pack(side="right")
 
     def _dibujar_detalle_dia(self, panel):
         fecha = self.selected_calendar_date

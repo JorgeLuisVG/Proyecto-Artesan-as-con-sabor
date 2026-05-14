@@ -36,7 +36,8 @@ def crearTablas():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombrePlatillo TEXT NOT NULL,
             procedimiento TEXT,
-            precio REAL NOT NULL DEFAULT 0
+            precio REAL NOT NULL DEFAULT 0,
+            precioManufactura REAL NOT NULL DEFAULT 0
         );
 
         CREATE TABLE IF NOT EXISTS ingredientes (
@@ -55,6 +56,8 @@ def crearTablas():
             anticipo REAL DEFAULT 0,
             subtotal REAL DEFAULT 0,
             total REAL DEFAULT 0,
+            costoManufactura REAL DEFAULT 0,
+            ganancia REAL DEFAULT 0,
             tipo TEXT DEFAULT 'Pedido simple',
             estado TEXT DEFAULT 'Pendiente',
             notas TEXT DEFAULT '',
@@ -87,7 +90,10 @@ def crearTablas():
 
     # Small migrations for databases created with previous classroom versions.
     _ensure_column(cur, "clientes", "direccion", "TEXT DEFAULT ''")
+    _ensure_column(cur, "recetas", "precioManufactura", "REAL NOT NULL DEFAULT 0")
     _ensure_column(cur, "pedidos", "clienteID", "INTEGER")
+    _ensure_column(cur, "pedidos", "costoManufactura", "REAL DEFAULT 0")
+    _ensure_column(cur, "pedidos", "ganancia", "REAL DEFAULT 0")
     _ensure_column(cur, "pedidos", "estado", "TEXT DEFAULT 'Pendiente'")
     _ensure_column(cur, "pedidos", "notas", "TEXT DEFAULT ''")
 

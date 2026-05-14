@@ -135,15 +135,19 @@ def eliminarCliente(clienteID):
     con.close()
 
 
-def insertarReceta(nombre, procedimiento, precio, ingredientes=None):
+def insertarReceta(nombre, procedimiento, precio, precioManufactura=0, ingredientes=None):
+    if ingredientes is None and isinstance(precioManufactura, (list, tuple, dict)):
+        ingredientes = precioManufactura
+        precioManufactura = 0
+
     con = conectar()
     cur = con.cursor()
     cur.execute(
         """
-        INSERT INTO recetas (nombrePlatillo, procedimiento, precio)
-        VALUES (?, ?, ?)
+        INSERT INTO recetas (nombrePlatillo, procedimiento, precio, precioManufactura)
+        VALUES (?, ?, ?, ?)
         """,
-        (nombre.strip(), procedimiento.strip(), _to_float(precio)),
+        (nombre.strip(), procedimiento.strip(), _to_float(precio), _to_float(precioManufactura)),
     )
     receta_id = cur.lastrowid
     for ingrediente, cantidad in _normalizar_ingredientes(ingredientes):
@@ -180,6 +184,7 @@ def obtenerRecetas(busqueda=""):
         """
         SELECT r.id, r.nombrePlatillo, COALESCE(r.procedimiento, '') AS procedimiento,
                COALESCE(r.precio, 0) AS precio,
+               COALESCE(r.precioManufactura, 0) AS precioManufactura,
                COALESCE(GROUP_CONCAT(i.nombre || ' (' || COALESCE(i.cantidad, '') || ')', ', '), '') AS ingredientes
         FROM recetas r
         LEFT JOIN ingredientes i ON i.recetaID = r.id
@@ -200,7 +205,8 @@ def obtenerRecetaPorId(recetaID):
     cur.execute(
         """
         SELECT id, nombrePlatillo, COALESCE(procedimiento, '') AS procedimiento,
-               COALESCE(precio, 0) AS precio
+               COALESCE(precio, 0) AS precio,
+               COALESCE(precioManufactura, 0) AS precioManufactura
         FROM recetas
         WHERE id = ?
         """,
@@ -228,16 +234,20 @@ def obtenerIngredientesReceta(recetaID):
     return datos
 
 
-def actualizarReceta(recetaID, nombre, procedimiento, precio, ingredientes=None):
+def actualizarReceta(recetaID, nombre, procedimiento, precio, precioManufactura=0, ingredientes=None):
+    if ingredientes is None and isinstance(precioManufactura, (list, tuple, dict)):
+        ingredientes = precioManufactura
+        precioManufactura = 0
+
     con = conectar()
     cur = con.cursor()
     cur.execute(
         """
         UPDATE recetas
-        SET nombrePlatillo = ?, procedimiento = ?, precio = ?
+        SET nombrePlatillo = ?, procedimiento = ?, precio = ?, precioManufactura = ?
         WHERE id = ?
         """,
-        (nombre.strip(), procedimiento.strip(), _to_float(precio), recetaID),
+        (nombre.strip(), procedimiento.strip(), _to_float(precio), _to_float(precioManufactura), recetaID),
     )
     cur.execute("DELETE FROM ingredientes WHERE recetaID = ?", (recetaID,))
     for ingrediente, cantidad in _normalizar_ingredientes(ingredientes):
@@ -261,10 +271,12 @@ def eliminarReceta(recetaID):
 
 def _calcular_totales(cur, clienteID, recetas):
     subtotal = 0.0
+    costo_manufactura = 0.0
     for receta_id, cantidad in recetas:
-        row = cur.execute("SELECT precio FROM recetas WHERE id = ?", (receta_id,)).fetchone()
+        row = cur.execute("SELECT precio, precioManufactura FROM recetas WHERE id = ?", (receta_id,)).fetchone()
         if row:
             subtotal += _to_float(row["precio"]) * cantidad
+            costo_manufactura += _to_float(row["precioManufactura"]) * cantidad
 
     descuento = 0.0
     if clienteID:
@@ -273,18 +285,43 @@ def _calcular_totales(cur, clienteID, recetas):
             descuento = _normalizar_descuento(cliente["descuento"])
 
     total = max(subtotal * (1 - descuento), 0)
-    return round(subtotal, 2), round(total, 2)
+    ganancia = max(total - costo_manufactura, 0)
+    return round(subtotal, 2), round(total, 2), round(costo_manufactura, 2), round(ganancia, 2)
 
 
-def insertarPedido(clienteID, direccion, fecha, anticipo, subtotal, total, tipo, estado="Pendiente", notas=""):
+def insertarPedido(
+    clienteID,
+    direccion,
+    fecha,
+    anticipo,
+    subtotal,
+    total,
+    tipo,
+    estado="Pendiente",
+    notas="",
+    costoManufactura=0,
+    ganancia=0,
+):
     con = conectar()
     cur = con.cursor()
     cur.execute(
         """
-        INSERT INTO pedidos (clienteID, direccion, fecha, anticipo, subtotal, total, tipo, estado, notas)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO pedidos (clienteID, direccion, fecha, anticipo, subtotal, total, costoManufactura, ganancia, tipo, estado, notas)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (clienteID, direccion.strip(), fecha, _to_float(anticipo), _to_float(subtotal), _to_float(total), tipo, estado, notas),
+        (
+            clienteID,
+            direccion.strip(),
+            fecha,
+            _to_float(anticipo),
+            _to_float(subtotal),
+            _to_float(total),
+            _to_float(costoManufactura),
+            _to_float(ganancia),
+            tipo,
+            estado,
+            notas,
+        ),
     )
     pedido_id = cur.lastrowid
     con.commit()
@@ -336,7 +373,7 @@ def insertarPedidoConRecetas(
 
     con = conectar()
     cur = con.cursor()
-    subtotal, total = _calcular_totales(cur, clienteID, recetas_normalizadas)
+    subtotal, total, costo_manufactura, ganancia = _calcular_totales(cur, clienteID, recetas_normalizadas)
 
     if not direccion.strip() and clienteID:
         cliente = cur.execute("SELECT direccion FROM clientes WHERE id = ?", (clienteID,)).fetchone()
@@ -344,10 +381,22 @@ def insertarPedidoConRecetas(
 
     cur.execute(
         """
-        INSERT INTO pedidos (clienteID, direccion, fecha, anticipo, subtotal, total, tipo, estado, notas)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO pedidos (clienteID, direccion, fecha, anticipo, subtotal, total, costoManufactura, ganancia, tipo, estado, notas)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (clienteID, direccion.strip(), fecha, _to_float(anticipo), subtotal, total, tipo, estado, notas.strip()),
+        (
+            clienteID,
+            direccion.strip(),
+            fecha,
+            _to_float(anticipo),
+            subtotal,
+            total,
+            costo_manufactura,
+            ganancia,
+            tipo,
+            estado,
+            notas.strip(),
+        ),
     )
     pedido_id = cur.lastrowid
 
@@ -405,7 +454,7 @@ def obtenerPedidos(busqueda="", estado=None, tipo=None, fecha=None, historial=Fa
         parametros.append(fecha)
 
     if historial:
-        condiciones.append("p.estado <> 'Pendiente'")
+        condiciones.append("p.estado IN ('Entregado', 'Cancelado')")
 
     where = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
     cur.execute(
@@ -415,6 +464,17 @@ def obtenerPedidos(busqueda="", estado=None, tipo=None, fecha=None, historial=Fa
                COALESCE(p.direccion, '') AS direccion,
                p.fecha, COALESCE(p.anticipo, 0) AS anticipo,
                COALESCE(p.subtotal, 0) AS subtotal, COALESCE(p.total, 0) AS total,
+               COALESCE(
+                   NULLIF(p.costoManufactura, 0),
+                   COALESCE(SUM(COALESCE(r.precioManufactura, 0) * COALESCE(pr.cantidad, 0)), 0)
+               ) AS costoManufactura,
+               COALESCE(
+                   NULLIF(p.ganancia, 0),
+                   COALESCE(p.total, 0) - COALESCE(
+                       NULLIF(p.costoManufactura, 0),
+                       COALESCE(SUM(COALESCE(r.precioManufactura, 0) * COALESCE(pr.cantidad, 0)), 0)
+                   )
+               ) AS ganancia,
                COALESCE(p.tipo, 'Pedido simple') AS tipo,
                COALESCE(p.estado, 'Pendiente') AS estado,
                COALESCE(p.notas, '') AS notas,
@@ -446,7 +506,10 @@ def obtenerPedidoDetalle(pedidoID):
     cur.execute(
         """
         SELECT pr.recetaID, r.nombrePlatillo, pr.cantidad, r.precio,
-               (pr.cantidad * r.precio) AS subtotalLinea
+               COALESCE(r.precioManufactura, 0) AS precioManufactura,
+               (pr.cantidad * r.precio) AS subtotalLinea,
+               (pr.cantidad * COALESCE(r.precioManufactura, 0)) AS costoLinea,
+               ((pr.cantidad * r.precio) - (pr.cantidad * COALESCE(r.precioManufactura, 0))) AS gananciaLinea
         FROM pedidosReceta pr
         JOIN recetas r ON r.id = pr.recetaID
         WHERE pr.pedidoID = ?
@@ -490,7 +553,18 @@ def obtenerPedidosCalendario(anio, mes):
                COALESCE(c.nombre, 'Cliente eliminado') AS cliente,
                COALESCE(e.nombreEvento, '') AS evento,
                COALESCE(GROUP_CONCAT(r.nombrePlatillo || ' x' || pr.cantidad, ', '), '') AS recetas,
-               COALESCE(p.total, 0) AS total
+               COALESCE(p.total, 0) AS total,
+               COALESCE(
+                   NULLIF(p.costoManufactura, 0),
+                   COALESCE(SUM(COALESCE(r.precioManufactura, 0) * COALESCE(pr.cantidad, 0)), 0)
+               ) AS costoManufactura,
+               COALESCE(
+                   NULLIF(p.ganancia, 0),
+                   COALESCE(p.total, 0) - COALESCE(
+                       NULLIF(p.costoManufactura, 0),
+                       COALESCE(SUM(COALESCE(r.precioManufactura, 0) * COALESCE(pr.cantidad, 0)), 0)
+                   )
+               ) AS ganancia
         FROM pedidos p
         LEFT JOIN clientes c ON c.id = p.clienteID
         LEFT JOIN eventos e ON e.pedidoID = p.id
@@ -523,6 +597,8 @@ def obtenerResumen():
         "recetas": cur.execute("SELECT COUNT(*) AS total FROM recetas").fetchone()["total"],
         "pendientes": cur.execute("SELECT COUNT(*) AS total FROM pedidos WHERE estado = 'Pendiente'").fetchone()["total"],
         "ingresos": cur.execute("SELECT COALESCE(SUM(total), 0) AS total FROM pedidos WHERE estado = 'Entregado'").fetchone()["total"],
+        "manufactura": cur.execute("SELECT COALESCE(SUM(costoManufactura), 0) AS total FROM pedidos WHERE estado = 'Entregado'").fetchone()["total"],
+        "ganancia": cur.execute("SELECT COALESCE(SUM(ganancia), 0) AS total FROM pedidos WHERE estado = 'Entregado'").fetchone()["total"],
     }
     con.close()
     return resumen
