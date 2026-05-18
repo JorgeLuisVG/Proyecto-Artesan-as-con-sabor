@@ -1,4 +1,4 @@
-import calendar
+﻿import calendar
 import tkinter as tk
 from datetime import date, datetime
 from tkinter import messagebox, ttk
@@ -39,7 +39,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Artesanías con Sabor")
+        self.title("ArtesanÃ­as con Sabor")
         self.geometry("1240x780")
         self.minsize(1040, 680)
         self.configure(fg_color="#f4f6fb")
@@ -116,7 +116,7 @@ class App(ctk.CTk):
         ).pack(side="left")
         ctk.CTkLabel(
             brand,
-            text="Artesanías\ncon Sabor",
+            text="ArtesanÃ­as\ncon Sabor",
             justify="left",
             text_color="#f9fafb",
             font=ctk.CTkFont("Segoe UI", 15, "bold"),
@@ -128,7 +128,7 @@ class App(ctk.CTk):
             ("eventos", "Eventos", self.mostrar_eventos),
             ("pedidos", "Pedidos", self.mostrar_pedidos),
             ("calendario", "Calendario", self.mostrar_calendario),
-            ("historial", "Historial", self.mostrar_historial),
+            ("historial", "Registros", self.mostrar_historial),
         ]
 
         for clave, texto, comando in opciones:
@@ -318,7 +318,7 @@ class App(ctk.CTk):
     def _estado_color(self, estado):
         return {
             "Pendiente": self.colors["warning"],
-            "En preparación": self.colors["primary"],
+            "En preparaciÃ³n": self.colors["primary"],
             "Entregado": self.colors["success"],
             "Cancelado": self.colors["danger"],
         }.get(estado, self.colors["muted"])
@@ -372,7 +372,7 @@ class App(ctk.CTk):
             wrapper,
             "Buscar receta por nombre o preparacion...",
             [
-                ("Añadir", lambda: self.abrir_form_receta(), self.colors["primary"]),
+                ("AÃ±adir", lambda: self.abrir_form_receta(), self.colors["primary"]),
                 ("Cambiar", lambda: self.abrir_form_receta(tree), self.colors["warning"]),
                 ("Eliminar", lambda: self.eliminar_receta(tree), self.colors["danger"]),
             ],
@@ -449,7 +449,7 @@ class App(ctk.CTk):
         receta = obtenerRecetaPorId(receta_id) if receta_id else None
         ingredientes = obtenerIngredientesReceta(receta_id) if receta_id else []
 
-        modal = self._crear_modal("Cambiar receta" if receta_id else "Añadir receta", 680, 620)
+        modal = self._crear_modal("Cambiar receta" if receta_id else "AÃ±adir receta", 680, 620)
         form = ctk.CTkScrollableFrame(modal, fg_color="transparent")
         form.grid(row=0, column=0, sticky="nsew", padx=22, pady=22)
         form.grid_columnconfigure(1, weight=1)
@@ -515,7 +515,7 @@ class App(ctk.CTk):
         receta_id = self._selected_id(tree, "receta")
         if receta_id is None:
             return
-        if messagebox.askyesno("Eliminar receta", "¿Deseas eliminar esta receta? Esta accion tambien la quitara de pedidos guardados."):
+        if messagebox.askyesno("Eliminar receta", "Â¿Deseas eliminar esta receta? Esta accion tambien la quitara de pedidos guardados."):
             eliminarReceta(receta_id)
             self.refrescar_vista()
 
@@ -528,7 +528,7 @@ class App(ctk.CTk):
             wrapper,
             "Buscar cliente por nombre, telefono o direccion...",
             [
-                ("Añadir", lambda: self.abrir_form_cliente(), self.colors["primary"]),
+                ("AÃ±adir", lambda: self.abrir_form_cliente(), self.colors["primary"]),
                 ("Cambiar", lambda: self.abrir_form_cliente(tree), self.colors["warning"]),
                 ("Eliminar", lambda: self.eliminar_cliente(tree), self.colors["danger"]),
             ],
@@ -564,7 +564,7 @@ class App(ctk.CTk):
             return
         cliente = obtenerClientePorId(cliente_id) if cliente_id else None
 
-        modal = self._crear_modal("Cambiar cliente" if cliente_id else "Añadir cliente", 620, 420)
+        modal = self._crear_modal("Cambiar cliente" if cliente_id else "AÃ±adir cliente", 620, 420)
         form = ctk.CTkFrame(modal, fg_color="transparent")
         form.grid(row=0, column=0, sticky="nsew", padx=24, pady=24)
         form.grid_columnconfigure(1, weight=1)
@@ -610,7 +610,7 @@ class App(ctk.CTk):
         cliente_id = self._selected_id(tree, "cliente")
         if cliente_id is None:
             return
-        if messagebox.askyesno("Eliminar cliente", "¿Deseas eliminar este cliente? Sus pedidos quedaran como cliente eliminado."):
+        if messagebox.askyesno("Eliminar cliente", "Â¿Deseas eliminar este cliente? Sus pedidos quedaran como cliente eliminado."):
             eliminarCliente(cliente_id)
             self.refrescar_vista()
 
@@ -635,7 +635,7 @@ class App(ctk.CTk):
     def mostrar_historial(self):
         self._mostrar_listado_pedidos(
             clave="historial",
-            titulo="Historial",
+            titulo="Registros",
             subtitulo="Pedidos entregados o cancelados para consulta posterior.",
             tipo=None,
             historial=True,
@@ -652,7 +652,7 @@ class App(ctk.CTk):
                 ("Nuevo pedido", lambda: self.abrir_form_pedido("Pedido simple"), self.colors["primary"]),
                 ("Nuevo evento", lambda: self.abrir_form_pedido("Evento"), self.colors["accent"]),
                 ("Entregado", lambda: self.cambiar_estado_pedido(tree, "Entregado"), self.colors["success"]),
-                ("Preparacion", lambda: self.cambiar_estado_pedido(tree, "En preparación"), self.colors["warning"]),
+                ("Preparacion", lambda: self.cambiar_estado_pedido(tree, "En preparaciÃ³n"), self.colors["warning"]),
                 ("Cancelar", lambda: self.cambiar_estado_pedido(tree, "Cancelado"), self.colors["danger"]),
                 ("Detalle", lambda: self.ver_detalle_pedido(tree), self.colors["primary"]),
             ]
@@ -826,7 +826,7 @@ class App(ctk.CTk):
             cantidad_var = tk.StringVar(value="1")
             ctk.CTkCheckBox(
                 row,
-                text=f"{receta['nombrePlatillo']}  ·  Venta {self._money(receta['precio'])} / Costo {self._money(receta['precioManufactura'])}",
+                text=f"{receta['nombrePlatillo']}  Â·  Venta {self._money(receta['precio'])} / Costo {self._money(receta['precioManufactura'])}",
                 variable=activo,
                 text_color=self.colors["text"],
                 font=ctk.CTkFont("Segoe UI", 12),
@@ -899,7 +899,7 @@ class App(ctk.CTk):
         pedido_id = self._selected_id(tree, "pedido")
         if pedido_id is None:
             return
-        if messagebox.askyesno("Eliminar pedido", "¿Deseas eliminar definitivamente este pedido?"):
+        if messagebox.askyesno("Eliminar pedido", "Â¿Deseas eliminar definitivamente este pedido?"):
             eliminarPedido(pedido_id)
             self.refrescar_vista()
 
@@ -1132,3 +1132,4 @@ class App(ctk.CTk):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+
