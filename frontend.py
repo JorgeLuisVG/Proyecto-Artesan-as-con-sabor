@@ -1,4 +1,4 @@
-﻿import calendar
+import calendar
 import tkinter as tk
 from datetime import date, datetime
 from tkinter import messagebox, ttk
@@ -39,7 +39,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("ArtesanÃ­as con Sabor")
+        self.title("Artesanías con Sabor")
         self.geometry("1240x780")
         self.minsize(1040, 680)
         self.configure(fg_color="#f4f6fb")
@@ -116,7 +116,7 @@ class App(ctk.CTk):
         ).pack(side="left")
         ctk.CTkLabel(
             brand,
-            text="ArtesanÃ­as\ncon Sabor",
+            text="Artesanías\ncon Sabor",
             justify="left",
             text_color="#f9fafb",
             font=ctk.CTkFont("Segoe UI", 15, "bold"),
@@ -318,7 +318,7 @@ class App(ctk.CTk):
     def _estado_color(self, estado):
         return {
             "Pendiente": self.colors["warning"],
-            "En preparaciÃ³n": self.colors["primary"],
+            "En preparación": self.colors["primary"],
             "Entregado": self.colors["success"],
             "Cancelado": self.colors["danger"],
         }.get(estado, self.colors["muted"])
@@ -330,7 +330,7 @@ class App(ctk.CTk):
                 return datetime.strptime(valor, formato).date().isoformat()
             except ValueError:
                 pass
-        raise ValueError("Usa una fecha valida: 2026-05-10 o 10/05/2026.")
+        raise ValueError("Usa una fecha válida: 2026-05-10 o 10/05/2026.")
 
     def _parse_ingredientes(self, texto):
         ingredientes = []
@@ -370,9 +370,9 @@ class App(ctk.CTk):
 
         search_var, search = self._toolbar(
             wrapper,
-            "Buscar receta por nombre o preparacion...",
+            "Buscar receta por nombre o preparación...",
             [
-                ("AÃ±adir", lambda: self.abrir_form_receta(), self.colors["primary"]),
+                ("Añadir", lambda: self.abrir_form_receta(), self.colors["primary"]),
                 ("Cambiar", lambda: self.abrir_form_receta(tree), self.colors["warning"]),
                 ("Eliminar", lambda: self.eliminar_receta(tree), self.colors["danger"]),
             ],
@@ -401,7 +401,7 @@ class App(ctk.CTk):
             font=ctk.CTkFont("Segoe UI", 12),
         )
         detalle.pack(fill="x", pady=(12, 0))
-        detalle.insert("1.0", "Selecciona una receta para ver su preparacion e ingredientes.")
+        detalle.insert("1.0", "Selecciona una receta para ver su preparación e ingredientes.")
         detalle.configure(state="disabled")
 
         def cargar(_event=None):
@@ -425,14 +425,14 @@ class App(ctk.CTk):
             detalle.configure(state="normal")
             detalle.delete("1.0", "end")
             if receta_id is None:
-                detalle.insert("1.0", "Selecciona una receta para ver su preparacion e ingredientes.")
+                detalle.insert("1.0", "Selecciona una receta para ver su preparación e ingredientes.")
             else:
                 receta = obtenerRecetaPorId(receta_id)
                 ingredientes = obtenerIngredientesReceta(receta_id)
                 texto_ingredientes = "\n".join(f"- {i['nombre']}: {i['cantidad']}" for i in ingredientes) or "Sin ingredientes registrados"
                 detalle.insert(
                     "1.0",
-                    f"{receta['nombrePlatillo']}\nPrecio de venta: {self._money(receta['precio'])}\nPrecio de manufactura: {self._money(receta['precioManufactura'])}\nGanancia por porcion: {self._money(float(receta['precio']) - float(receta['precioManufactura']))}\n\nIngredientes:\n{texto_ingredientes}\n\nPreparacion:\n{receta['procedimiento'] or 'Sin preparacion registrada'}",
+                    f"{receta['nombrePlatillo']}\nPrecio de venta: {self._money(receta['precio'])}\nPrecio de manufactura: {self._money(receta['precioManufactura'])}\nGanancia por porción: {self._money(float(receta['precio']) - float(receta['precioManufactura']))}\n\nIngredientes:\n{texto_ingredientes}\n\nPreparación:\n{receta['procedimiento'] or 'Sin preparación registrada'}",
                 )
             detalle.configure(state="disabled")
 
@@ -449,7 +449,7 @@ class App(ctk.CTk):
         receta = obtenerRecetaPorId(receta_id) if receta_id else None
         ingredientes = obtenerIngredientesReceta(receta_id) if receta_id else []
 
-        modal = self._crear_modal("Cambiar receta" if receta_id else "AÃ±adir receta", 680, 620)
+        modal = self._crear_modal("Cambiar receta" if receta_id else "Añadir receta", 680, 620)
         form = ctk.CTkScrollableFrame(modal, fg_color="transparent")
         form.grid(row=0, column=0, sticky="nsew", padx=22, pady=22)
         form.grid_columnconfigure(1, weight=1)
@@ -461,7 +461,7 @@ class App(ctk.CTk):
         ctk.CTkLabel(form, text="Nombre del platillo", anchor="w", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=0, column=0, sticky="w", pady=8)
         ctk.CTkEntry(form, textvariable=nombre_var, height=40).grid(row=0, column=1, sticky="ew", pady=8)
 
-        ctk.CTkLabel(form, text="Precio por porcion", anchor="w", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=1, column=0, sticky="w", pady=8)
+        ctk.CTkLabel(form, text="Precio por porción", anchor="w", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=1, column=0, sticky="w", pady=8)
         ctk.CTkEntry(form, textvariable=precio_var, height=40, placeholder_text="0.00").grid(row=1, column=1, sticky="ew", pady=8)
 
         ctk.CTkLabel(form, text="Precio de manufactura", anchor="w", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=2, column=0, sticky="w", pady=8)
@@ -472,7 +472,7 @@ class App(ctk.CTk):
         ingredientes_text.grid(row=3, column=1, sticky="ew", pady=8)
         ingredientes_text.insert("1.0", "\n".join(f"{i['nombre']} | {i['cantidad']}" for i in ingredientes))
 
-        ctk.CTkLabel(form, text="Preparacion", anchor="w", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=4, column=0, sticky="nw", pady=8)
+        ctk.CTkLabel(form, text="Preparación", anchor="w", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=4, column=0, sticky="nw", pady=8)
         procedimiento_text = ctk.CTkTextbox(form, height=160, corner_radius=12)
         procedimiento_text.grid(row=4, column=1, sticky="ew", pady=8)
         procedimiento_text.insert("1.0", receta["procedimiento"] if receta else "")
@@ -497,7 +497,7 @@ class App(ctk.CTk):
                 precio = float(precio_var.get().replace(",", ".") or 0)
                 precio_manufactura = float(precio_manufactura_var.get().replace(",", ".") or 0)
             except ValueError:
-                messagebox.showerror("Precio invalido", "Los precios deben ser numericos.")
+                messagebox.showerror("Precio inválido", "Los precios deben ser numéricos.")
                 return
             procedimiento = procedimiento_text.get("1.0", "end").strip()
             ingredientes_guardar = self._parse_ingredientes(ingredientes_text.get("1.0", "end"))
@@ -515,20 +515,20 @@ class App(ctk.CTk):
         receta_id = self._selected_id(tree, "receta")
         if receta_id is None:
             return
-        if messagebox.askyesno("Eliminar receta", "Â¿Deseas eliminar esta receta? Esta accion tambien la quitara de pedidos guardados."):
+        if messagebox.askyesno("Eliminar receta", "¿Deseas eliminar esta receta? Esta acción también la quitará de pedidos guardados."):
             eliminarReceta(receta_id)
             self.refrescar_vista()
 
     def mostrar_clientes(self):
-        self.cambiar_vista("clientes", "Clientes", "Directorio de clientes recurrentes, telefonos, direcciones y descuentos.")
+        self.cambiar_vista("clientes", "Clientes", "Directorio de clientes recurrentes, teléfonos, direcciones y descuentos.")
         wrapper = ctk.CTkFrame(self.contenido, fg_color="transparent")
         wrapper.pack(fill="both", expand=True)
 
         search_var, search = self._toolbar(
             wrapper,
-            "Buscar cliente por nombre, telefono o direccion...",
+            "Buscar cliente por nombre, teléfono o dirección...",
             [
-                ("AÃ±adir", lambda: self.abrir_form_cliente(), self.colors["primary"]),
+                ("Añadir", lambda: self.abrir_form_cliente(), self.colors["primary"]),
                 ("Cambiar", lambda: self.abrir_form_cliente(tree), self.colors["warning"]),
                 ("Eliminar", lambda: self.eliminar_cliente(tree), self.colors["danger"]),
             ],
@@ -539,8 +539,8 @@ class App(ctk.CTk):
             [
                 ("id", "ID", 50, "center"),
                 ("nombre", "Cliente", 190, "w"),
-                ("telefono", "Telefono", 120, "center"),
-                ("direccion", "Direccion", 320, "w"),
+                ("telefono", "Teléfono", 120, "center"),
+                ("direccion", "Dirección", 320, "w"),
                 ("descuento", "Descuento", 100, "center"),
             ],
         )
@@ -564,7 +564,7 @@ class App(ctk.CTk):
             return
         cliente = obtenerClientePorId(cliente_id) if cliente_id else None
 
-        modal = self._crear_modal("Cambiar cliente" if cliente_id else "AÃ±adir cliente", 620, 420)
+        modal = self._crear_modal("Cambiar cliente" if cliente_id else "Añadir cliente", 620, 420)
         form = ctk.CTkFrame(modal, fg_color="transparent")
         form.grid(row=0, column=0, sticky="nsew", padx=24, pady=24)
         form.grid_columnconfigure(1, weight=1)
@@ -576,8 +576,8 @@ class App(ctk.CTk):
 
         campos = [
             ("Nombre", nombre_var, "Nombre del cliente"),
-            ("Direccion", direccion_var, "Direccion de entrega"),
-            ("Telefono", telefono_var, "8 digitos o telefono de contacto"),
+            ("Dirección", direccion_var, "Dirección de entrega"),
+            ("Teléfono", telefono_var, "8 dígitos o teléfono de contacto"),
             ("Descuento (%)", descuento_var, "0"),
         ]
         for row, (label, variable, placeholder) in enumerate(campos):
@@ -589,12 +589,12 @@ class App(ctk.CTk):
 
         def guardar():
             if not nombre_var.get().strip() or not telefono_var.get().strip():
-                messagebox.showerror("Dato faltante", "Nombre y telefono son obligatorios.")
+                messagebox.showerror("Dato faltante", "Nombre y teléfono son obligatorios.")
                 return
             try:
                 descuento = float(descuento_var.get().replace(",", ".") or 0) / 100
             except ValueError:
-                messagebox.showerror("Descuento invalido", "El descuento debe ser numerico.")
+                messagebox.showerror("Descuento inválido", "El descuento debe ser numérico.")
                 return
             if cliente_id:
                 actualizarCliente(cliente_id, nombre_var.get(), direccion_var.get(), telefono_var.get(), descuento)
@@ -610,7 +610,7 @@ class App(ctk.CTk):
         cliente_id = self._selected_id(tree, "cliente")
         if cliente_id is None:
             return
-        if messagebox.askyesno("Eliminar cliente", "Â¿Deseas eliminar este cliente? Sus pedidos quedaran como cliente eliminado."):
+        if messagebox.askyesno("Eliminar cliente", "¿Deseas eliminar este cliente? Sus pedidos quedarán como cliente eliminado."):
             eliminarCliente(cliente_id)
             self.refrescar_vista()
 
@@ -652,7 +652,7 @@ class App(ctk.CTk):
                 ("Nuevo pedido", lambda: self.abrir_form_pedido("Pedido simple"), self.colors["primary"]),
                 ("Nuevo evento", lambda: self.abrir_form_pedido("Evento"), self.colors["accent"]),
                 ("Entregado", lambda: self.cambiar_estado_pedido(tree, "Entregado"), self.colors["success"]),
-                ("Preparacion", lambda: self.cambiar_estado_pedido(tree, "En preparaciÃ³n"), self.colors["warning"]),
+                ("En preparación", lambda: self.cambiar_estado_pedido(tree, "En preparación"), self.colors["warning"]),
                 ("Cancelar", lambda: self.cambiar_estado_pedido(tree, "Cancelado"), self.colors["danger"]),
                 ("Detalle", lambda: self.ver_detalle_pedido(tree), self.colors["primary"]),
             ]
@@ -789,8 +789,8 @@ class App(ctk.CTk):
         ctk.CTkEntry(fecha_frame, textvariable=fecha_var, height=40, placeholder_text="2026-05-10").grid(row=0, column=0, sticky="ew")
         ctk.CTkButton(fecha_frame, text="Hoy", width=72, command=lambda: fecha_var.set(date.today().isoformat())).grid(row=0, column=1, padx=(8, 0))
 
-        ctk.CTkLabel(form, text="Direccion", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=3, column=0, sticky="w", pady=8)
-        ctk.CTkEntry(form, textvariable=direccion_var, height=40, placeholder_text="Direccion de entrega o recoger en tienda").grid(row=3, column=1, sticky="ew", pady=8)
+        ctk.CTkLabel(form, text="Dirección", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=3, column=0, sticky="w", pady=8)
+        ctk.CTkEntry(form, textvariable=direccion_var, height=40, placeholder_text="Dirección de entrega o recoger en tienda").grid(row=3, column=1, sticky="ew", pady=8)
 
         ctk.CTkLabel(form, text="Anticipo", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=4, column=0, sticky="w", pady=8)
         ctk.CTkEntry(form, textvariable=anticipo_var, height=40, placeholder_text="0.00").grid(row=4, column=1, sticky="ew", pady=8)
@@ -801,7 +801,7 @@ class App(ctk.CTk):
         ctk.CTkLabel(evento_frame, text="Nombre del evento", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=0, column=0, sticky="w", padx=14, pady=(14, 8))
         ctk.CTkEntry(evento_frame, textvariable=evento_var, height=38).grid(row=0, column=1, sticky="ew", padx=14, pady=(14, 8))
         ctk.CTkLabel(evento_frame, text="Extras", font=ctk.CTkFont("Segoe UI", 12, "bold")).grid(row=1, column=0, sticky="w", padx=14, pady=(0, 14))
-        ctk.CTkEntry(evento_frame, textvariable=extras_var, height=38, placeholder_text="Decoracion, montaje, bebidas, etc.").grid(row=1, column=1, sticky="ew", padx=14, pady=(0, 14))
+        ctk.CTkEntry(evento_frame, textvariable=extras_var, height=38, placeholder_text="Decoración, montaje, bebidas, etc.").grid(row=1, column=1, sticky="ew", padx=14, pady=(0, 14))
 
         def alternar_evento(_value=None):
             if tipo_var.get() == "Evento":
@@ -826,7 +826,7 @@ class App(ctk.CTk):
             cantidad_var = tk.StringVar(value="1")
             ctk.CTkCheckBox(
                 row,
-                text=f"{receta['nombrePlatillo']}  Â·  Venta {self._money(receta['precio'])} / Costo {self._money(receta['precioManufactura'])}",
+                text=f"{receta['nombrePlatillo']}  ·  Venta {self._money(receta['precio'])} / Costo {self._money(receta['precioManufactura'])}",
                 variable=activo,
                 text_color=self.colors["text"],
                 font=ctk.CTkFont("Segoe UI", 12),
@@ -848,10 +848,10 @@ class App(ctk.CTk):
                     try:
                         cantidad = int(cantidad_var.get() or 1)
                     except ValueError:
-                        messagebox.showerror("Cantidad invalida", f"La cantidad de {receta['nombrePlatillo']} debe ser numerica.")
+                        messagebox.showerror("Cantidad inválida", f"La cantidad de {receta['nombrePlatillo']} debe ser numérica.")
                         return
                     if cantidad <= 0:
-                        messagebox.showerror("Cantidad invalida", "La cantidad debe ser mayor que cero.")
+                        messagebox.showerror("Cantidad inválida", "La cantidad debe ser mayor que cero.")
                         return
                     recetas_seleccionadas.append({"recetaID": receta["id"], "cantidad": cantidad})
 
@@ -863,7 +863,7 @@ class App(ctk.CTk):
                 fecha = self._parse_fecha(fecha_var.get())
                 anticipo = float(anticipo_var.get().replace(",", ".") or 0)
             except ValueError as exc:
-                messagebox.showerror("Dato invalido", str(exc))
+                messagebox.showerror("Dato inválido", str(exc))
                 return
 
             cliente_id = cliente_labels[cliente_var.get()]["id"]
@@ -899,7 +899,7 @@ class App(ctk.CTk):
         pedido_id = self._selected_id(tree, "pedido")
         if pedido_id is None:
             return
-        if messagebox.askyesno("Eliminar pedido", "Â¿Deseas eliminar definitivamente este pedido?"):
+        if messagebox.askyesno("Eliminar pedido", "¿Deseas eliminar definitivamente este pedido?"):
             eliminarPedido(pedido_id)
             self.refrescar_vista()
 
@@ -925,7 +925,7 @@ class App(ctk.CTk):
             ("Fecha", pedido["fecha"]),
             ("Tipo", pedido["tipo"]),
             ("Estado", pedido["estado"]),
-            ("Direccion", pedido["direccion"] or "Sin direccion"),
+            ("Dirección", pedido["direccion"] or "Sin dirección"),
             ("Recetas", pedido["recetas"] or "Sin recetas"),
             ("Subtotal", self._money(pedido["subtotal"])),
             ("Anticipo", self._money(pedido["anticipo"])),
@@ -1009,7 +1009,7 @@ class App(ctk.CTk):
         for row in range(7):
             calendario_frame.grid_rowconfigure(row, weight=1, minsize=70)
 
-        dias = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"]
+        dias = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sab", "Dom"]
         for col, nombre in enumerate(dias):
             ctk.CTkLabel(
                 calendario_frame,
@@ -1113,7 +1113,7 @@ class App(ctk.CTk):
 
         pedidos = obtenerPedidosPorFecha(fecha.isoformat())
         if not pedidos:
-            ctk.CTkLabel(panel, text="No hay pedidos para este dia.", text_color=self.colors["muted"], anchor="w").pack(fill="x", padx=12, pady=12)
+            ctk.CTkLabel(panel, text="No hay pedidos para este día.", text_color=self.colors["muted"], anchor="w").pack(fill="x", padx=12, pady=12)
         for pedido in pedidos:
             card = ctk.CTkFrame(panel, fg_color="#f8fafc", corner_radius=14)
             card.pack(fill="x", padx=12, pady=6)
@@ -1125,8 +1125,8 @@ class App(ctk.CTk):
             ctk.CTkLabel(footer, text=pedido["estado"], text_color=self._estado_color(pedido["estado"]), font=ctk.CTkFont("Segoe UI", 11, "bold")).pack(side="left")
             ctk.CTkLabel(footer, text=self._money(pedido["total"]), text_color=self.colors["text"], font=ctk.CTkFont("Segoe UI", 11, "bold")).pack(side="right")
 
-        ctk.CTkButton(panel, text="Nuevo pedido este dia", command=lambda: self.abrir_form_pedido("Pedido simple", fecha)).pack(fill="x", padx=12, pady=(16, 6))
-        ctk.CTkButton(panel, text="Nuevo evento este dia", fg_color=self.colors["accent"], hover_color="#ea580c", command=lambda: self.abrir_form_pedido("Evento", fecha)).pack(fill="x", padx=12, pady=(0, 12))
+        ctk.CTkButton(panel, text="Nuevo pedido este día", command=lambda: self.abrir_form_pedido("Pedido simple", fecha)).pack(fill="x", padx=12, pady=(16, 6))
+        ctk.CTkButton(panel, text="Nuevo evento este día", fg_color=self.colors["accent"], hover_color="#ea580c", command=lambda: self.abrir_form_pedido("Evento", fecha)).pack(fill="x", padx=12, pady=(0, 12))
 
 
 if __name__ == "__main__":
